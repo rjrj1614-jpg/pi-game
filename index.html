@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Pi City Survivor</title>
+    <script src="https://sdk.minepi.com/pi-sdk.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        body, html { margin: 0; padding: 0; overflow: hidden; background: #020408; }
+        @keyframes pulse-btn {
+            0%, 100% { box-shadow: 0 0 22px rgba(0,255,200,0.45); }
+            50% { box-shadow: 0 0 32px rgba(0,255,200,0.7); }
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef, useCallback } = React;
+
+        // --- CONFIGURATION ---
+        const APP_ID = "city-survivor"; // Your Slug
+
+        function PiCitySurvivor() {
+            const [gamePhase, setGamePhase] = useState("start");
+            const [isAuthLoading, setIsAuthLoading] = useState(true);
+            const [user, setUser] = useState(null);
+
+            // 1. PI SDK INITIALIZATION & AUTH
+            useEffect(() => {
+                const initPi = async () => {
+                    try {
+                        await window.Pi.init({ version: "2.0", sandbox: true });
+                        const scopes = ['username', 'payments'];
+                        const auth = await window.Pi.authenticate(scopes, (payment) => {
+                            console.log("Payment in progress", payment);
+                        });
+                        setUser(auth.user);
+                        setIsAuthLoading(false);
+                    } catch (err) {
+                        console.error("Auth Error:", err);
+                        setIsAuthLoading(false);
+                    }
+                };
+                initPi();
+            }, []);
+
+            const handleEnterCity = () => {
+                // Since we are fixing the "Disturbed" code, we start the game directly for now
+                // to verify the screen works. 
+                setGamePhase("playing");
+            };
+
+            if (isAuthLoading) {
+                return (
+                    <div className="flex h-screen items-center justify-center text-cyan-400 font-mono">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-400 mr-4"></div>
+                        AUTHENTICATING WITH PI...
+                    </div>
+                );
+            }
+
+            return (
+                <div className="relative w-full h-[100dvh] bg-[#020408] overflow-hidden select-none touch-none">
+                    {/* Background City Effect */}
+                    <div className="absolute inset-0 opacity-20 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')]"></div>
+                    
+                    {gamePhase === "start" && (
+                        <div className="absolute inset-0 flex flex-col items-center justify-center z-20 bg-[rgba(2,4,8,0.9)] px-8">
+                            <p className="font-mono text-[10px] tracking-[0.4em] text-cyan-500/50 uppercase mb-2">
+                                Welcome, {user ? user.username : 'Survivor'}
+                            </p>
+                            <h1 className="font-mono font-black text-4xl text-center text-white leading-none tracking-tighter mb-8">
+                                PI CITY<br />
+                                <span className="text-[#ff0055] drop-shadow-[0_0_15px_#ff0055]">SURVIVOR</span>
+                            </h1>
+
+                            <button
+                                onClick={handleEnterCity}
+                                className="w-full max-w-xs py-4 font-mono font-bold text-black bg-gradient-to-r from-[#00ffcc] to-[#0088ff] rounded uppercase tracking-widest animate-[pulse-btn_2s_infinite]"
+                            >
+                                ENTER CITY (1 PI)
+                            </button>
+                            
+                            <p className="mt-4 font-mono text-[8px] text-white/20 uppercase tracking-widest">
+                                Survive the Devil Waves
+                            </p>
+                        </div>
+                    )}
+
+                    {gamePhase === "playing" && (
+                        <div className="flex h-screen items-center justify-center text-white font-mono text-center px-4">
+                            <div>
+                                <h2 className="text-2xl text-cyan-400 mb-4">CITY ENTERED</h2>
+                                <p className="text-sm text-gray-400">Loading Game Engine Components...</p>
+                                <p className="text-[10px] mt-10 text-white/10 uppercase">v2.0 Stable Build</p>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<PiCitySurvivor />);
+    </script>
+</body>
+</html>
